@@ -198,3 +198,45 @@ start from scratch with a new PTK. -->
     - Attacks the four-way handshake by exploiting message 3 and 4
     - Man in the middle causes the loss of message 4
     - Nonce is reset, same message with different encrypted data is sent twice
+---
+#### Bluetooth
+- Managed by the Bluetooth Special Interest Group (Bluetooth SIG)
+- Initially there were two implementations Bluetooth Low Energy and Bluetooth Classic
+- Bluetooth 4.0 combines the two, and LE Privacy is born
+- Bluetooth is using a [protocol stack](https://www.researchgate.net/profile/Mukhtar-Sofi/publication/311086845/figure/download/fig1/AS:715986273583107@1547715838391/Basic-diagram-of-Bluetooth-protocol-stack.png)
+- L4 is L2CAP (Logical Link Control and Adaptation Protocol)
+- L5 is SMP (Security Manager Protocol)
+    1. Pairing
+    2. Encryption
+    3. Signing
+---
+#### Bluetooth
+##### Bluetooth Security Modes
+- Security Levels
+    1. Security Level 1 - communication w/o any security
+    2. Security Level 2 - AES-CMAC for communication between unpaired devices
+    3. Security Level 3 - Support encryption, paring is needed
+    4. Security Level 4 - Everything above + ECDHE of AES-CMAC
+- Security Modes
+    1. Security Mode 1 - no data signing
+    2. Security Mode 2 - all data is signed
+    3. Mixed Security Mode - includes both above
+- Mixing is possible
+    - Secure Connection Only Mode - SM1 + SL4
+
+----
+#### Bluetooth
+##### Attacks
+- BlueSmack attack
+    1. DOS Attack
+    2. L2PING to calculate RTT
+    3. Transfers an oversized packet over the L2CAP layer
+- BlueJacking
+    1. Sending unsolicited contacts over bluetooth
+- Bluesnarfing Attack
+    1. Only works when the device is discoverable
+    2. Exploits the [OBEX](https://en.wikipedia.org/wiki/OBject_EXchange) protocol
+    3. Permits copy of data
+- Bluebugging Attack
+    1. Only works after pairing
+    2. Permits installing a backdoor
