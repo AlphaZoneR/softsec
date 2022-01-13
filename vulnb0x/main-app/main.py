@@ -13,14 +13,11 @@ from typing import Container, List, Optional
 import bcrypt
 import bson
 import dacite
-import docker
-import docker.types
 import docker.models.containers
 import dotenv
 import flask
 import flask_socketio
 import git
-from docker import client
 from flask import json
 
 import data
@@ -49,13 +46,13 @@ class ContainerWatcherThread(threading.Thread):
     repo_path: str
 
     def __init__(
-        self,
-        image: str,
-        email: str,
-        configuration_id: bson.ObjectId,
-        build_id: bson.ObjectId,
-        volume_mappings: List[data.VolumeMapping],
-        repo_path: str,
+            self,
+            image: str,
+            email: str,
+            configuration_id: bson.ObjectId,
+            build_id: bson.ObjectId,
+            volume_mappings: List[data.VolumeMapping],
+            repo_path: str,
     ):
         super().__init__()
         self.image = image
@@ -110,9 +107,9 @@ class ContainerWatcherThread(threading.Thread):
             LOG.error(f"There was an issue running the container. {e}")
             output = f"\nThere was an issue running the container. {e}"
 
-        user = dbase.get_mongo_collection("users").find_one({"email": self.email})
+        user: data.User = dacite.from_dict(data_class=data.User,
+                                           data=dbase.get_mongo_collection("users").find_one({"email": self.email}))
 
-        user: data.User = dacite.from_dict(data_class=data.User, data=user)
         configuration: data.RepositoryConfiguration = next(
             repository
             for repository in user.repository_configurations
@@ -135,7 +132,7 @@ def login_required(f):
     @functools.wraps(f)
     def decorated_function(*args, **kwargs):
         if flask.session.get("user") is None:
-            return flask.redirect("/login.html")
+            return flask.redirect("/login")
         return f(*args, **kwargs)
 
     return decorated_function
@@ -148,6 +145,10 @@ def user_required(f):
             {"email": flask.session["user"]["email"]}
         )
 
+        if not user:
+            flask.session = {}
+            return flask.redirect('/')
+
         user: data.User = dacite.from_dict(data_class=data.User, data=user)
         return f(user, *args, **kwargs)
 
@@ -156,10 +157,10 @@ def user_required(f):
 
 def is_valid_user(user: dict) -> bool:
     return (
-        user is not None
-        and type(user) == dict
-        and "email" in user
-        and "permissions" in user
+            user is not None
+            and type(user) == dict
+            and "email" in user
+            and "permissions" in user
     )
 
 
@@ -186,30 +187,33 @@ if __name__ == "__main__":
 
     socketio = flask_socketio.SocketIO(app, async_mode="gevent", logger=True)
 
+
     @app.before_request
     def before_request():
         if (
-            not is_valid_user(flask.session.get("user"))
-            and "/login.html" not in flask.request.url
-            and "/register.html" not in flask.request.url
-            and (
+                not is_valid_user(flask.session.get("user"))
+                and "/login" not in flask.request.url
+                and "/register" not in flask.request.url
+                and "/register.html" not in flask.request.url
+                and (
                 "/api/register" not in flask.request.url
                 or flask.request.method != "POST"
-            )
-            and (
+        )
+                and (
                 "/api/login" not in flask.request.url or flask.request.method != "POST"
-            )
+        )
         ):
             flask.session["user"] = None
-            return flask.redirect("/login.html")
+            return flask.redirect("/login")
 
         if flask.session.get("user") is not None and (
-            "/login.html" in flask.request.url
-            or "/register.html" in flask.request.url
-            or ("/api/register" in flask.request.url and flask.request.method == "POST")
-            or ("/api/login" in flask.request.url and flask.request.method == "POST")
+                "/login" in flask.request.url
+                or "/register.html" in flask.request.url
+                or ("/api/register" in flask.request.url and flask.request.method == "POST")
+                or ("/api/login" in flask.request.url and flask.request.method == "POST")
         ):
             return flask.redirect("/index.html")
+
 
     @app.get("/")
     @user_required
@@ -232,6 +236,12 @@ if __name__ == "__main__":
             all_repos=all_repos,
             isadmin=permissions == "admin",
         )
+
+
+    @app.get("/login")
+    def get_login():
+        return flask.render_template('login.html')
+
 
     @app.get("/configuration/<configuration_id>/build/<build_id>")
     @user_required
@@ -258,6 +268,7 @@ if __name__ == "__main__":
                 status=404,
                 mimetype="application/json",
             )
+
 
     @app.post("/api/configuration/<id>/build")
     @user_required
@@ -308,6 +319,7 @@ if __name__ == "__main__":
 
         return flask.Response(json.dumps({}), mimetype="application/json")
 
+
     @app.post("/api/configuration/<id>/update")
     @user_required
     def update_repository(user: data.User, id: str):
@@ -329,7 +341,7 @@ if __name__ == "__main__":
                     os.chmod(temp_file.name, 0o600)
 
                     with repo.git.custom_environment(
-                        GIT_SSH_COMMAND=f"ssh -i {temp_file.name}"
+                            GIT_SSH_COMMAND=f"ssh -i {temp_file.name}"
                     ):
                         repo.remote().pull()
             else:
@@ -343,6 +355,7 @@ if __name__ == "__main__":
             )
 
         return flask.Response(json.dumps({}), mimetype="application/json")
+
 
     @app.delete("/api/configuration/<id>")
     @user_required
@@ -360,6 +373,7 @@ if __name__ == "__main__":
         )
 
         return flask.Response(json.dumps({}), mimetype="application/json")
+
 
     @app.post("/api/configuration")
     @user_required
@@ -428,6 +442,7 @@ if __name__ == "__main__":
 
         return flask.Response(json.dumps({}), mimetype="application/json")
 
+
     @app.post("/api/login")
     def login():
 
@@ -460,6 +475,7 @@ if __name__ == "__main__":
         }
 
         return flask.redirect("/")
+
 
     @app.post("/api/register")
     def register():
@@ -499,15 +515,17 @@ if __name__ == "__main__":
 
         flask.session["user"] = {
             "email": email,
-            "permissions": "admin" if email == "mock@aferencz.xyz" else "user",
+            "permissions": "admin" if email == "root@vulnb0x.xyz" else "user",
         }
 
         return flask.redirect("/")
+
 
     @app.post("/api/logout")
     def logout():
         flask.session["user"] = None
 
         return flask.redirect("/")
+
 
     socketio.run(app, host="0.0.0.0", port=int(os.environ["APP_PORT"]))

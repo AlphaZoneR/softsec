@@ -10,8 +10,7 @@ RUN mkdir ~/.ssh/ && \
     chmod 644 ~/.ssh/known_hosts
 
 RUN ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts && \
-    ssh-keyscan -t rsa gitlab.com >> ~/.ssh/known_hosts && \
-    ssh-keyscan -t rsa -p 2200 gitlab.alf >> ~/.ssh/known_hosts
+    ssh-keyscan -t rsa gitlab.com >> ~/.ssh/known_hosts
 
 ADD ./ ./
 

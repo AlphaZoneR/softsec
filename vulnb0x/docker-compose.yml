@@ -13,6 +13,8 @@ services:
     image: mongo:latest
     restart: always
     container_name: vulnb0x-mongodb
+    hostname: vulnb0x-mongodb
+    domainname: vulnb0x-mongodb
     environment:
       - MONGO_INITDB_ROOT_USERNAME=user
       - MONGO_INITDB_ROOT_PASSWORD=strongpassword11
@@ -21,7 +23,7 @@ services:
     depends_on:
       - mongodb
       - docker
-    container_name: vulnb0x-app
+    container_name: vulnb0x-app 
     environment:
       - APP_PORT=8090
       - REPOS_PATH=/var/repositories

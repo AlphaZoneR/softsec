@@ -14,8 +14,8 @@ window.addEventListener('load', () => {
     const volumeMappingError = document.querySelector('div[data-vbox-volume-error]');
 
     /**
-    * @type {HTMLDivElement}
-    */
+     * @type {HTMLDivElement}
+     */
     const configAddError = document.querySelector('div[data-vbox-add-config-error]');
 
     /**
@@ -37,7 +37,7 @@ window.addEventListener('load', () => {
         constructor() {
             super();
 
-            this.attachShadow({ mode: 'open' })
+            this.attachShadow({mode: 'open'})
                 .appendChild(volumeMappingEntryTemplate.content.cloneNode(true));
         }
 
@@ -46,8 +46,8 @@ window.addEventListener('load', () => {
          */
         get source() {
             /**
-          * @type {HTMLInputElement}
-          */
+             * @type {HTMLInputElement}
+             */
             const sourceInput = this.shadowRoot.querySelector('input[data-vbox-source]');
 
             return sourceInput.value;
@@ -58,8 +58,8 @@ window.addEventListener('load', () => {
          */
         get destination() {
             /**
-          * @type {HTMLInputElement}
-          */
+             * @type {HTMLInputElement}
+             */
             const destInput = this.shadowRoot.querySelector('input[data-vbox-dest]');
 
             return destInput.value;
@@ -70,6 +70,22 @@ window.addEventListener('load', () => {
          */
         get deleteMappingButton() {
             return this.shadowRoot.querySelector('button[data-vbox-delete-mapping]');
+        }
+
+        /**
+         * @returns {null}
+         */
+        showInvalid() {
+            this.shadowRoot.querySelector('input[data-vbox-dest]').classList.add('is-invalid');
+            this.shadowRoot.querySelector('input[data-vbox-source]').classList.add('is-invalid');
+        }
+
+        /**
+         * @returns {null}
+         */
+        hideInvalid() {
+            this.shadowRoot.querySelector('input[data-vbox-dest]').classList.remove('is-invalid');
+            this.shadowRoot.querySelector('input[data-vbox-source]').classList.remove('is-invalid');
         }
     }
 
@@ -93,7 +109,12 @@ window.addEventListener('load', () => {
         volumeMappingError.innerHTML = '';
         volumeMappingError.classList.add('hidden');
 
+        /**
+         * @type {[VolumeMappingElement]}
+         */
         const currentMappings = [...volumeMappingsHolder.querySelectorAll('vbox-mapping')];
+
+        currentMappings.forEach(e => e.hideInvalid());
 
         if (currentMappings.map(isCompleteMapping).every(x => x)) {
             const newMappingElement = new VolumeMappingElement();
@@ -104,6 +125,8 @@ window.addEventListener('load', () => {
 
             volumeMappingsHolder.appendChild(newMappingElement);
         } else {
+            console.log(currentMappings.filter(isCompleteMapping));
+            currentMappings.filter(e => !isCompleteMapping(e)).forEach(element => element.showInvalid());
             volumeMappingError.classList.remove('hidden');
             volumeMappingError.innerHTML = 'Existing mappings are incomplete. Complete them to add a new one.'
         }
@@ -210,6 +233,7 @@ window.addEventListener('load', () => {
                 }
             }).then(() => {
                 button.removeAttribute('disabled');
+                window.location.reload();
             });
         })
     });

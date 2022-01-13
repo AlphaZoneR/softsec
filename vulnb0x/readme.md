@@ -2,7 +2,7 @@
 
 Egy olyan alkalmazás, mely megengedi, hogy különbözö github repository-k időnkénti felépítését és tesztelését konfiguráljuk, docker segítségével.
 
-Támadási útvonal
+## Támadási útvonal
 
 - Felhasználó regisztrál
 - Felhasználó belép
@@ -36,3 +36,7 @@ Támadási útvonal
 - További elemzés után a felhasználó rájon, hogy az alkalmazás _docker in docker_ módban fut, és létezik egy MongoDB szerver is, melyben eltárolja az adatokat
 - Egy újabb repository segítségével a felhasználó rácsatlakozik a MongoDB szerverre, és kinyeri a konfigurált repositorykat.
 - Az így kinyert privát kulccsal megpróbál rácsatlakozni a szerverre ssh-val, és sikerül. Kiderül, hogy bob root jogosultsággal rendelkezik.  
+
+## Javítási lehetőségek
+
+- 

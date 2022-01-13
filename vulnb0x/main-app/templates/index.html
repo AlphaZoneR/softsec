@@ -7,135 +7,227 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>vulnb0x</title>
     <link rel="stylesheet" href="index.css">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css"
+          integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w=="
+          crossorigin="anonymous" referrerpolicy="no-referrer"/>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
 </head>
 
 <body>
+<section class="m-4">
     <h1>Welcome to vulnb0x, {{ user.email }}!</h1>
-
-    <h2>Current repository configurations:</h2>
-    {% if user.repository_configurations %}
-        {% for repository in user.repository_configurations %}
-        <div class="vbox-configuration">
-            <h4>{{ repository.repository_url }}</h4>
-            <div>Created: {{ datetime.fromtimestamp(repository.created_at.time) }}</div>
-            {% if repository.last_ran_at %}
-                <div>Last build: {{ datetime.fromtimestamp(repository.last_ran_at.time) }}</div>
-            {% else %}
-                <div>Last build: Never</div>
-            {% endif %}
-            {% if repository.volume_mappings %}
-                <div>Volume mappings:</div>
-                {% for mapping in repository.volume_mappings %}
-                <div>{{ mapping.source }} → {{mapping.destination}}</div>
-                {% endfor %}
-            {% else %}
-            <div>No volume mappings</div>
-            {% endif %}
-            {% if repository.private_key %}
-            <div>Private key configured</div>
-            {% else %}
-            <div>Private key not configured </div>
-            {% endif %}
-            {% if repository.builds %}
-                <div>Builds:</div>
-                {% for build in repository.builds[-10:] %}
-                    <a href = "/configuration/{{repository._id}}/build/{{build._id}}">{{build._id}}</a><a> - {% if build.built_at %} {{ datetime.fromtimestamp(build.built_at.time) }} {% endif %} - {{ build.status }}</a>
-                    <br>
-                {% endfor %}
-            {% endif %}
-            <button data-vbox-id={{ repository._id }} data-vbox-pull>Update repository</button>
-            <button data-vbox-id={{ repository._id }} data-vbox-run-build>Run build</button>
-            <button data-vbox-id={{ repository._id }} data-vbox-delete-configuration>Delete configuration</button>
-            <div class="separator"></div>
-        </div>
-        {% endfor %}
-    {% else %}
-    <p>Currently no repositories configured!</p>
-    {% endif %}
-
-    {% if isadmin %}
-    <h2>All repository configurations:</h2>
-    {% for repository in all_repos %}
-    <div class="vbox-configuration">
-        <h4>{{ repository.repository_url }}</h4>
-        <div>Created: {{ datetime.fromtimestamp(repository.created_at.time) }}</div>
-        {% if repository.last_ran_at %}
-            <div>Last build: {{ datetime.fromtimestamp(repository.last_ran_at.time) }}</div>
-        {% else %}
-            <div>Last build: Never</div>
-        {% endif %}
-        {% if repository.volume_mappings %}
-            <div>Volume mappings:</div>
-            {% for mapping in repository.volume_mappings %}
-            <div>{{ mapping.source }} → {{mapping.destination}}</div>
-            {% endfor %}
-        {% else %}
-        <div>No volume mappings</div>
-        {% endif %}
-        {% if repository.private_key %}
-        <div>Private key configured</div>
-        {% else %}
-        <div>Private key not configured </div>
-        {% endif %}
-        {% if repository.builds %}
-            <div>Builds:</div>
-            {% for build in repository.builds[-10:] %}
-                <a href = "/configuration/{{repository._id}}/build/{{build._id}}">{{build._id}}</a><a> - {% if build.built_at %} {{ datetime.fromtimestamp(build.built_at.time) }} {% endif %} - {{ build.status }}</a>
-                <br>
-            {% endfor %}
-        {% endif %}
-        <button data-vbox-id={{ repository._id }} data-vbox-delete-configuration>Delete configuration</button>
-        <div class="separator"></div>
-    </div>
-    {% endfor %}
-    {% endif %}
-
-    <h2>Add a new repository configuration:</h2>
-    <form data-vbox-new-configuration-form action="/api/configuration" method="post">
-        <label for="repository-url">Repository URL:</label>
-        <input type="text" data-vbox-repository-url required name="repository-url">
-        <br>
-        <label for="private-key">Private key:</label>
-        <textarea data-vbox-private-key name="private-key"></textarea>
-        <h3>Volume mappings</h3>
-        <div data-vbox-volume-mappings>
-            <vbox-mapping></vbox-mapping>
-        </div>
-        <div data-vbox-volume-error class="hidden"></div>
-        <br>
-        <button data-vbox-add-mapping>Add new volume mapping</button>
-        <button data-vbox-submit-configuration type="submit">Add new configuration</button>
-        <div data-vbox-add-config-error class="hidden"></div>
-    </form>
-    <br>
-
     <form action="/api/logout" method="post">
-        <button type="submit">Log out!</button>
+        <button class="btn btn-dark" type="submit">Log out!</button>
     </form>
+</section>
 
-    <template data-vbox-mapping-template>
-        <div class="vbox-mapping">
-            <label for="source">Source: </label>
-            <input data-vbox-source name="source" type="text">
-            <label for="dest">Destination: </label>
-            <input data-vbox-dest name="dest" type="text">
-            <button data-vbox-delete-mapping>Delete mapping</button>
+<section class="card mb-2">
+    <div class="card-header">Current repository configurations:</div>
+    <div class="card-body">
+        {% if user.repository_configurations %}
+            {% for repository in user.repository_configurations %}
+                <div class="vbox-configuration card">
+                    <div class="card-header">{{ repository.repository_url }}</div>
+                    <div class="card-body">
+                        <div>Created: {{ datetime.fromtimestamp(repository.created_at.time) }}</div>
+                        {% if repository.last_ran_at %}
+                            <div>Last build: {{ datetime.fromtimestamp(repository.last_ran_at.time) }}</div>
+                        {% else %}
+                            <div>Last build: Never</div>
+                        {% endif %}
+                        {% if repository.volume_mappings %}
+                            <div>Volume mappings:</div>
+                            {% for mapping in repository.volume_mappings %}
+                                <div>{{ mapping.source }} → {{ mapping.destination }}</div>
+                            {% endfor %}
+                        {% else %}
+                            <div>No volume mappings</div>
+                        {% endif %}
+                        {% if repository.private_key %}
+                            <div>Private key configured</div>
+                        {% else %}
+                            <div>Private key not configured</div>
+                        {% endif %}
+                        {% if repository.builds %}
+                            <div class="card mb-2">
+                                <div class="card-header">
+                                    <button class="btn btn-link"
+                                            type="button"
+                                            data-toggle="collapse"
+                                            data-target="#collapsed-builds"
+                                            aria-expanded="true"
+                                            aria-controls="collapsed-builds">Builds <i class="fa fa-arrow-down"></i>
+                                    </button>
+                                </div>
+                                <div id="collapsed-builds" class="collapse">
+                                    <div class="card-body">
+                                        {% for build in repository.builds[-10:] %}
+                                            <a href="/configuration/{{ repository._id }}/build/{{ build._id }}">
+                                                {{ build._id }}
+                                                <i class="fa fa-external-link"></i></a>
+                                            <a> - {% if build.built_at %}
+                                                {{ datetime.fromtimestamp(build.built_at.time) }} {% endif %}
+                                                - {{ build.status }}</a>
+                                            <br>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                        <button class="btn btn-outline-warning" data-vbox-id={{ repository._id }} data-vbox-pull><i
+                                class="fa fa-rotate-left fa-rotate-180"></i>
+                        </button>
+                        <button class="btn btn-outline-success" data-vbox-id={{ repository._id }} data-vbox-run-build>
+                            <i class="fa fa-play"></i>
+                        </button>
+                        <button class="btn btn-outline-danger"
+                                data-vbox-id={{ repository._id }} data-vbox-delete-configuration><i
+                                class="fa fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>Currently no repositories configured. Start by configuring a repository below!</p>
+        {% endif %}
+    </div>
+</section>
+
+{% if isadmin %}
+    <section>
+        <h2>All repository configurations:</h2>
+        {% for repository in all_repos %}
+            <div class="vbox-configuration card">
+                <h4>{{ repository.repository_url }}</h4>
+                <div>Created: {{ datetime.fromtimestamp(repository.created_at.time) }}</div>
+                {% if repository.last_ran_at %}
+                    <div>Last build: {{ datetime.fromtimestamp(repository.last_ran_at.time) }}</div>
+                {% else %}
+                    <div>Last build: Never</div>
+                {% endif %}
+                {% if repository.volume_mappings %}
+                    <div>Volume mappings:</div>
+                    {% for mapping in repository.volume_mappings %}
+                        <div>{{ mapping.source }} → {{ mapping.destination }}</div>
+                    {% endfor %}
+                {% else %}
+                    <div>No volume mappings</div>
+                {% endif %}
+                {% if repository.private_key %}
+                    <div>Private key configured</div>
+                {% else %}
+                    <div>Private key not configured</div>
+                {% endif %}
+                {% if repository.builds %}
+                    <div>Builds:</div>
+                    {% for build in repository.builds[-10:] %}
+                        <a href="/configuration/{{ repository._id }}/build/{{ build._id }}">{{ build._id }}</a>
+                        <a> - {% if build.built_at %} {{ datetime.fromtimestamp(build.built_at.time) }} {% endif %}
+                            - {{ build.status }}</a>
+                        <br>
+                    {% endfor %}
+                {% endif %}
+                <button data-vbox-id={{ repository._id }} data-vbox-delete-configuration>Delete configuration</button>
+                <div class="separator"></div>
+            </div>
+        {% endfor %}
+    </section>
+{% endif %}
+
+<section class="card">
+    <div class="card-header card-title">Add a new repository configuration:</div>
+    <div class="card-body">
+        <form data-vbox-new-configuration-form action="/api/configuration" method="post">
+            <div class="mb-2 p-2">
+                <label class="form-label" for="repository-url">Repository URL:</label>
+                <input type="text" placeholder="git@example.com/username/repo.git" class="form-control form"
+                       data-vbox-repository-url required id="repository-url" name="repository-url">
+            </div>
+            <div class="p-2">
+                <label class="form-label" for="private-key">Private key:</label>
+                <textarea placeholder="-----BEGIN OPENSSH PRIVATE KEY-----b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAA...."
+                          id="private-key" class="form-control" data-vbox-private-key
+                          name="private-key"></textarea>
+            </div>
+            <div class="card">
+                <div class="card-header">Volume mappings</div>
+                <div class="card-body">
+                    <div data-vbox-volume-mappings>
+                        <vbox-mapping></vbox-mapping>
+                    </div>
+                    <div data-vbox-volume-error class="hidden text-danger mb-2"></div>
+                    <button class="btn btn-secondary" data-vbox-add-mapping><i class="fa fa-plus-circle"></i></button>
+                </div>
+            </div>
+            <br>
+            <button class="btn btn-success" data-vbox-submit-configuration type="submit">Add new configuration</button>
+            <div data-vbox-add-config-error class="hidden text-danger m-2"></div>
+        </form>
+    </div>
+</section>
+
+<template data-vbox-mapping-template>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css"
+          integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w=="
+          crossorigin="anonymous" referrerpolicy="no-referrer"/>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"
+            crossorigin="anonymous"></script>
+    <div class="vbox-mapping">
+        <div class="row row-cols-3 mb-2">
+            <div class="col">
+                <div class="row row-cols-2">
+                    <div class="col col-4">
+                        <label class="form-label" for="dest">Destination: </label>
+                    </div>
+                    <div class="col col-8">
+                        <input data-vbox-dest placeholder="/data/example" class="form-control" id="source" name="source"
+                               type="text">
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="row row-cols-2">
+                    <div class="col col-3">
+                        <label class="form-label" for="source">Source: </label>
+                    </div>
+                    <div class="col col-9">
+                        <input data-vbox-source placeholder="./data-dir" class="form-control" id="dest" data-vbox-dest
+                               name="dest" type="text">
+                    </div>
+                </div>
+
+            </div>
+            <div class="col">
+                <button class="btn btn-danger" data-vbox-delete-mapping><i class="fa fa-trash"></i></button>
+            </div>
         </div>
-    </template>
-
-    <template data-vbox-mapping-entry-template>
-        <div class="vbox-mapping-entry">
-
-        </div>
-    </template>
-
-    <template data-vbox-config-entry-template>
-        <div class="vbox-config-entry">
-
-        </div>
-    </template>
-
-    <script src="index.js"></script>
+    </div>
+</template>
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+        crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js"
+        integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut"
+        crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js"
+        integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k"
+        crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"
+        crossorigin="anonymous"></script>
+<script src="index.js"></script>
 </body>
 
 </html>
