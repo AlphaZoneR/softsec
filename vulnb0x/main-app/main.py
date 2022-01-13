@@ -5,10 +5,9 @@ import os
 import sys
 import tempfile
 import threading
-import time
-import uuid
 from datetime import datetime
 from itertools import tee
+import time
 from typing import Container, List, Optional
 
 import bcrypt
@@ -67,53 +66,45 @@ class ContainerWatcherThread(threading.Thread):
         self.repo_path = repo_path
 
     def run(self) -> None:
-        output = (
-            "------------------------------- Run ---------------------------------\n"
-        )
 
         volumes = list(
             map(
-                lambda v: f"{os.path.join('/home/split', v.source)}:{v.destination}",
+                lambda v: f"{os.path.join(self.repo_path, v.source)}:{v.destination}",
                 self.volume_mappings,
             )
         )
 
         try:
-            logs: docker.types.daemon.CancellableStream = docker_client.containers.run(
+            logs: bytes = docker_client.containers.run(
                 self.image,
                 detach=False,
                 stdout=True,
                 stderr=True,
-                stream=True,
                 volumes=volumes,
             )
 
-            for event in logs:
-                output += event.decode()
+            user = dbase.get_mongo_collection("users").find_one({"email": self.email})
 
-                user = dbase.get_mongo_collection("users").find_one(
-                    {"email": self.email}
-                )
+            user: data.User = dacite.from_dict(data_class=data.User, data=user)
+            configuration: data.RepositoryConfiguration = next(
+                repository
+                for repository in user.repository_configurations
+                if repository._id == self.configuration_id
+            )
 
-                user: data.User = dacite.from_dict(data_class=data.User, data=user)
-                configuration: data.RepositoryConfiguration = next(
-                    repository
-                    for repository in user.repository_configurations
-                    if repository._id == self.configuration_id
-                )
+            build: data.Build = next(
+                b for b in configuration.builds if b._id == self.build_id
+            )
 
-                build: data.Build = next(
-                    b for b in configuration.builds if b._id == self.build_id
-                )
+            output = "------------------------------- Run ---------------------------------\n"
+            build.output += output + logs.decode() if logs else "No output"
+            build.status = "FINISHED"
 
-                build.output += output
-                build.status = "PROGRESS"
+            dbase.get_mongo_collection("users").replace_one(
+                {"_id": user._id}, dataclasses.asdict(user)
+            )
 
-                dbase.get_mongo_collection("users").replace_one(
-                    {"_id": user._id}, dataclasses.asdict(user)
-                )
-
-                output = ""
+            output = ""
 
         except Exception as e:
             LOG.error(f"There was an issue running the container. {e}")
@@ -183,7 +174,14 @@ if __name__ == "__main__":
     app.secret_key = os.environ["APP_SECRET"]
     app.config["TEMPLATES_AUTO_RELOAD"] = True
 
-    docker_client = docker.from_env()
+    for i in range(10):
+        try:
+            docker_client = docker.from_env()
+            break
+        except Exception as e:
+            LOG.error(f"Error connecting to docker: {e}")
+
+        time.sleep(i)
 
     socketio = flask_socketio.SocketIO(app, async_mode="gevent", logger=True)
 
@@ -252,7 +250,7 @@ if __name__ == "__main__":
             if str(repository._id) == id
         )
 
-        repo_fullpath = os.path.join(tempfile.gettempdir(), str(configuration._id))
+        repo_fullpath = os.path.join(os.environ["REPOS_PATH"], str(configuration._id))
 
         build = data.Build(
             "------------------------------- Build ---------------------------------\n",
@@ -264,6 +262,7 @@ if __name__ == "__main__":
             {"_id": user._id}, dataclasses.asdict(user)
         )
 
+        LOG.info(data.RepositoryConfiguration)
         tag = f"{str(configuration._id)}"
         image, tee_object = docker_client.images.build(
             path=repo_fullpath, nocache=True, quiet=False, tag=tag
@@ -300,7 +299,7 @@ if __name__ == "__main__":
             if str(repository._id) == id
         )
 
-        repo_fullpath = os.path.join(tempfile.gettempdir(), str(configuration._id))
+        repo_fullpath = os.path.join(os.environ["REPOS_PATH"], str(configuration._id))
 
         repo = git.Repo(repo_fullpath)
 
@@ -308,6 +307,9 @@ if __name__ == "__main__":
             if configuration.private_key:
                 with tempfile.NamedTemporaryFile("w") as temp_file:
                     temp_file.write(configuration.private_key)
+                    temp_file.flush()
+                    os.chmod(temp_file.name, 0o600)
+                    
                     with repo.git.custom_environment(
                         GIT_SSH_COMMAND=f"ssh -i {temp_file.name}"
                     ):
@@ -359,16 +361,21 @@ if __name__ == "__main__":
             volume_mappings=volume_mappings,
         )
 
-        repo_fullpath = os.path.join(tempfile.gettempdir(), str(configuration._id))
+        repo_fullpath = os.path.join(os.environ["REPOS_PATH"], str(configuration._id))
 
         try:
             if private_key:
                 with tempfile.NamedTemporaryFile("w") as temp_file:
                     temp_file.write(private_key)
-                    git.Repo.clone_from(
-                        repository_url,
-                        repo_fullpath,
-                        env={"GIT_SSH_COMMAND": f"ssh -i {temp_file.name}"},
+                    temp_file.flush()
+                    os.chmod(temp_file.name, 0o600)
+
+                    git_interface = git.Git()
+                    git_interface.update_environment(
+                        GIT_SSH_COMMAND=f"ssh -i {temp_file.name}"
+                    )
+                    git.Repo._clone(
+                        git_interface, repository_url, repo_fullpath, git.GitCmdObjectDB
                     )
             else:
                 git.Repo.clone_from(

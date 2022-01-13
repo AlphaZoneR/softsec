@@ -1,5 +1,14 @@
 version: '3'
 services:
+  docker:
+    hostname: vulnb0x-docker
+    domainname: vulnb0x-docker
+    image: docker:dind
+    privileged: yes
+    container_name: vulnb0x-docker
+    volumes:
+      - certs:/certs/client
+      - repositories:/var/repositories
   mongodb:
     image: mongo:latest
     restart: always
@@ -7,18 +16,25 @@ services:
     environment:
       - MONGO_INITDB_ROOT_USERNAME=user
       - MONGO_INITDB_ROOT_PASSWORD=strongpassword11
-  redis:
-    image: 'redis:6.2-alpine'
-    command: redis-server --requirepass strongpassword
-    ports:
-      - '6379:6379'
   vulnb0x:
-    pirvileged: true
     build: ./main-app
     depends_on:
       - mongodb
+      - docker
     container_name: vulnb0x-app
+    environment:
+      - APP_PORT=8090
+      - REPOS_PATH=/var/repositories
+      - MONGO_URL=mongodb://user:strongpassword11@vulnb0x-mongodb:27017/
+      - MONGO_DB=prod
+      - DOCKER_HOST=tcp://vulnb0x-docker:2376
+      - DOCKER_CERT_PATH=/certs/client
+      - DOCKER_TLS_VERIFY=1
+    volumes:
+      - certs:/certs/client
+      - repositories:/var/repositories
     ports:
       - "8090:8090"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+volumes:
+  certs:
+  repositories:
