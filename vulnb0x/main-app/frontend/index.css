@@ -1,0 +1,17 @@
+.hidden {
+    display: none;
+}
+
+div[data-vbox-volume-error] {
+    color: red;
+}
+
+div[data-vbox-add-config-error] {
+    color: red;
+}
+
+.separator {
+    padding: 5px 5px 5px 5px;
+    width: 100%;
+    border-bottom: 1px solid black;
+}

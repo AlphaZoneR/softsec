@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vulnb0x</title>
+    <link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+    <h1>Welcome to vulnb0x, {{ user.email }}!</h1>
+
+    <h2>Current repository configurations:</h2>
+    {% if user.repository_configurations %}
+        {% for repository in user.repository_configurations %}
+        <div class="vbox-configuration">
+            <h4>{{ repository.repository_url }}</h4>
+            <div>Created: {{ datetime.fromtimestamp(repository.created_at.time) }}</div>
+            {% if repository.last_ran_at %}
+                <div>Last build: {{ datetime.fromtimestamp(repository.last_ran_at.time) }}</div>
+            {% else %}
+                <div>Last build: Never</div>
+            {% endif %}
+            {% if repository.volume_mappings %}
+                <div>Volume mappings:</div>
+                {% for mapping in repository.volume_mappings %}
+                <div>{{ mapping.source }} → {{mapping.destination}}</div>
+                {% endfor %}
+            {% else %}
+            <div>No volume mappings</div>
+            {% endif %}
+            {% if repository.private_key %}
+            <div>Private key configured</div>
+            {% else %}
+            <div>Private key not configured </div>
+            {% endif %}
+            {% if repository.builds %}
+                <div>Builds:</div>
+                {% for build in repository.builds[-10:] %}
+                    <a href = "/configuration/{{repository._id}}/build/{{build._id}}">{{build._id}}</a><a> - {% if build.built_at %} {{ datetime.fromtimestamp(build.built_at.time) }} {% endif %} - {{ build.status }}</a>
+                    <br>
+                {% endfor %}
+            {% endif %}
+            <button data-vbox-id={{ repository._id }} data-vbox-pull>Update repository</button>
+            <button data-vbox-id={{ repository._id }} data-vbox-run-build>Run build</button>
+            <button data-vbox-id={{ repository._id }} data-vbox-delete-configuration>Delete configuration</button>
+            <div class="separator"></div>
+        </div>
+        {% endfor %}
+    {% else %}
+    <p>Currently no repositories configured!</p>
+    {% endif %}
+
+    <h2>Add a new repository configuration:</h2>
+    <form data-vbox-new-configuration-form action="/api/configuration" method="post">
+        <label for="repository-url">Repository URL:</label>
+        <input type="text" data-vbox-repository-url required name="repository-url">
+        <br>
+        <label for="private-key">Private key:</label>
+        <textarea data-vbox-private-key name="private-key"></textarea>
+        <h3>Volume mappings</h3>
+        <div data-vbox-volume-mappings>
+            <vbox-mapping></vbox-mapping>
+        </div>
+        <div data-vbox-volume-error class="hidden"></div>
+        <br>
+        <button data-vbox-add-mapping>Add new volume mapping</button>
+        <button data-vbox-submit-configuration type="submit">Add new configuration</button>
+        <div data-vbox-add-config-error class="hidden"></div>
+    </form>
+    <br>
+
+    <form action="/api/logout" method="post">
+        <button type="submit">Log out!</button>
+    </form>
+
+    <template data-vbox-mapping-template>
+        <div class="vbox-mapping">
+            <label for="source">Source: </label>
+            <input data-vbox-source name="source" type="text">
+            <label for="dest">Destination: </label>
+            <input data-vbox-dest name="dest" type="text">
+            <button data-vbox-delete-mapping>Delete mapping</button>
+        </div>
+    </template>
+
+    <template data-vbox-mapping-entry-template>
+        <div class="vbox-mapping-entry">
+
+        </div>
+    </template>
+
+    <template data-vbox-config-entry-template>
+        <div class="vbox-config-entry">
+
+        </div>
+    </template>
+
+    <script src="index.js"></script>
+</body>
+
+</html>

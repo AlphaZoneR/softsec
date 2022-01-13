@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login to vulnb0x</title>
+</head>
+<body>
+    <h1>Welcome to vulnb0x!</h1>
+    <p>Please log in.</p>
+
+    <form action="/api/login" method="POST">
+        <label for="email">Email:</label>
+        <input name="email" data-vbox-email type="email">
+        <label for="password">Password:</label>
+        <input name="password" data-vbox-password type="password">
+        <input type="submit">
+    </form>
+
+    <div>Don't have an account? <a href="/register.html">Create one!</a></div>
+    <script type="javascript" src="login.js"></script>
+</body>
+</html>
