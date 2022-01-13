@@ -53,6 +53,43 @@
     <p>Currently no repositories configured!</p>
     {% endif %}
 
+    {% if isadmin %}
+    <h2>All repository configurations:</h2>
+    {% for repository in all_repos %}
+    <div class="vbox-configuration">
+        <h4>{{ repository.repository_url }}</h4>
+        <div>Created: {{ datetime.fromtimestamp(repository.created_at.time) }}</div>
+        {% if repository.last_ran_at %}
+            <div>Last build: {{ datetime.fromtimestamp(repository.last_ran_at.time) }}</div>
+        {% else %}
+            <div>Last build: Never</div>
+        {% endif %}
+        {% if repository.volume_mappings %}
+            <div>Volume mappings:</div>
+            {% for mapping in repository.volume_mappings %}
+            <div>{{ mapping.source }} → {{mapping.destination}}</div>
+            {% endfor %}
+        {% else %}
+        <div>No volume mappings</div>
+        {% endif %}
+        {% if repository.private_key %}
+        <div>Private key configured</div>
+        {% else %}
+        <div>Private key not configured </div>
+        {% endif %}
+        {% if repository.builds %}
+            <div>Builds:</div>
+            {% for build in repository.builds[-10:] %}
+                <a href = "/configuration/{{repository._id}}/build/{{build._id}}">{{build._id}}</a><a> - {% if build.built_at %} {{ datetime.fromtimestamp(build.built_at.time) }} {% endif %} - {{ build.status }}</a>
+                <br>
+            {% endfor %}
+        {% endif %}
+        <button data-vbox-id={{ repository._id }} data-vbox-delete-configuration>Delete configuration</button>
+        <div class="separator"></div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
     <h2>Add a new repository configuration:</h2>
     <form data-vbox-new-configuration-form action="/api/configuration" method="post">
         <label for="repository-url">Repository URL:</label>

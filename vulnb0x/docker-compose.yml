@@ -33,6 +33,7 @@ services:
     volumes:
       - certs:/certs/client
       - repositories:/var/repositories
+      - ./privkey/id_rsa:/var/data/privkey
     ports:
       - "8090:8090"
 volumes:

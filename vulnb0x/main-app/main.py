@@ -149,7 +149,6 @@ def user_required(f):
         )
 
         user: data.User = dacite.from_dict(data_class=data.User, data=user)
-
         return f(user, *args, **kwargs)
 
     return decorated_function
@@ -183,6 +182,8 @@ if __name__ == "__main__":
 
         time.sleep(i)
 
+    dbase.seed()
+
     socketio = flask_socketio.SocketIO(app, async_mode="gevent", logger=True)
 
     @app.before_request
@@ -212,8 +213,25 @@ if __name__ == "__main__":
 
     @app.get("/")
     @user_required
-    def root(user):
-        return flask.render_template("index.html", user=user, datetime=datetime)
+    def root(user: data.User):
+        permissions = flask.session["user"]["permissions"]
+
+        all_repos = []
+
+        if permissions == "admin":
+            users = list(dbase.get_mongo_collection("users").find({}))
+            users = list(map(lambda u: dacite.from_dict(data.User, u), users))
+
+            for nuser in users:
+                all_repos = [*all_repos, *nuser.repository_configurations]
+
+        return flask.render_template(
+            "index.html",
+            user=user,
+            datetime=datetime,
+            all_repos=all_repos,
+            isadmin=permissions == "admin",
+        )
 
     @app.get("/configuration/<configuration_id>/build/<build_id>")
     @user_required
@@ -309,7 +327,7 @@ if __name__ == "__main__":
                     temp_file.write(configuration.private_key)
                     temp_file.flush()
                     os.chmod(temp_file.name, 0o600)
-                    
+
                     with repo.git.custom_environment(
                         GIT_SSH_COMMAND=f"ssh -i {temp_file.name}"
                     ):
@@ -438,7 +456,7 @@ if __name__ == "__main__":
 
         flask.session["user"] = {
             "email": email,
-            "permissions": "admin" if email == "mock@aferencz.xyz" else "user",
+            "permissions": "admin" if email == "root@vulnb0x.xyz" else "user",
         }
 
         return flask.redirect("/")
