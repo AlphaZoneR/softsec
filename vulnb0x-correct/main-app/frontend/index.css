@@ -1,0 +1,20 @@
+.hidden {
+    display: none;
+}
+
+section::after {
+    border-bottom: 1px solid black;
+    height: 1px;
+    display: block;
+    width: 100vw;
+}
+
+body {
+    padding: 5px 5px 5px 5px;
+}
+
+.separator {
+    padding: 5px 5px 5px 5px;
+    width: 100%;
+    border-bottom: 1px solid black;
+}

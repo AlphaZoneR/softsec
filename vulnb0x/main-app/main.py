@@ -2,6 +2,7 @@ import dataclasses
 import functools
 import logging
 import os
+import pathlib
 import sys
 import tempfile
 import threading
@@ -46,13 +47,13 @@ class ContainerWatcherThread(threading.Thread):
     repo_path: str
 
     def __init__(
-            self,
-            image: str,
-            email: str,
-            configuration_id: bson.ObjectId,
-            build_id: bson.ObjectId,
-            volume_mappings: List[data.VolumeMapping],
-            repo_path: str,
+        self,
+        image: str,
+        email: str,
+        configuration_id: bson.ObjectId,
+        build_id: bson.ObjectId,
+        volume_mappings: List[data.VolumeMapping],
+        repo_path: str,
     ):
         super().__init__()
         self.image = image
@@ -107,8 +108,10 @@ class ContainerWatcherThread(threading.Thread):
             LOG.error(f"There was an issue running the container. {e}")
             output = f"\nThere was an issue running the container. {e}"
 
-        user: data.User = dacite.from_dict(data_class=data.User,
-                                           data=dbase.get_mongo_collection("users").find_one({"email": self.email}))
+        user: data.User = dacite.from_dict(
+            data_class=data.User,
+            data=dbase.get_mongo_collection("users").find_one({"email": self.email}),
+        )
 
         configuration: data.RepositoryConfiguration = next(
             repository
@@ -147,7 +150,7 @@ def user_required(f):
 
         if not user:
             flask.session = {}
-            return flask.redirect('/')
+            return flask.redirect("/")
 
         user: data.User = dacite.from_dict(data_class=data.User, data=user)
         return f(user, *args, **kwargs)
@@ -155,12 +158,21 @@ def user_required(f):
     return decorated_function
 
 
+def are_mappings_valid(repo_fullpath: str, volume_mappings: List[data.VolumeMapping]):
+    for mapping in volume_mappings:
+        mapping_fullpath = pathlib.Path(os.path.join(repo_fullpath, mapping.source))
+        if not mapping_fullpath.exists():
+            return False
+
+    return True
+
+
 def is_valid_user(user: dict) -> bool:
     return (
-            user is not None
-            and type(user) == dict
-            and "email" in user
-            and "permissions" in user
+        user is not None
+        and type(user) == dict
+        and "email" in user
+        and "permissions" in user
     )
 
 
@@ -187,33 +199,31 @@ if __name__ == "__main__":
 
     socketio = flask_socketio.SocketIO(app, async_mode="gevent", logger=True)
 
-
     @app.before_request
     def before_request():
         if (
-                not is_valid_user(flask.session.get("user"))
-                and "/login" not in flask.request.url
-                and "/register" not in flask.request.url
-                and "/register.html" not in flask.request.url
-                and (
+            not is_valid_user(flask.session.get("user"))
+            and "/login" not in flask.request.url
+            and "/register" not in flask.request.url
+            and "/register.html" not in flask.request.url
+            and (
                 "/api/register" not in flask.request.url
                 or flask.request.method != "POST"
-        )
-                and (
+            )
+            and (
                 "/api/login" not in flask.request.url or flask.request.method != "POST"
-        )
+            )
         ):
             flask.session["user"] = None
             return flask.redirect("/login")
 
         if flask.session.get("user") is not None and (
-                "/login" in flask.request.url
-                or "/register.html" in flask.request.url
-                or ("/api/register" in flask.request.url and flask.request.method == "POST")
-                or ("/api/login" in flask.request.url and flask.request.method == "POST")
+            "/login" in flask.request.url
+            or "/register.html" in flask.request.url
+            or ("/api/register" in flask.request.url and flask.request.method == "POST")
+            or ("/api/login" in flask.request.url and flask.request.method == "POST")
         ):
             return flask.redirect("/index.html")
-
 
     @app.get("/")
     @user_required
@@ -237,11 +247,9 @@ if __name__ == "__main__":
             isadmin=permissions == "admin",
         )
 
-
     @app.get("/login")
     def get_login():
-        return flask.render_template('login.html')
-
+        return flask.render_template("login.html")
 
     @app.get("/configuration/<configuration_id>/build/<build_id>")
     @user_required
@@ -268,7 +276,6 @@ if __name__ == "__main__":
                 status=404,
                 mimetype="application/json",
             )
-
 
     @app.post("/api/configuration/<id>/build")
     @user_required
@@ -319,7 +326,6 @@ if __name__ == "__main__":
 
         return flask.Response(json.dumps({}), mimetype="application/json")
 
-
     @app.post("/api/configuration/<id>/update")
     @user_required
     def update_repository(user: data.User, id: str):
@@ -341,7 +347,7 @@ if __name__ == "__main__":
                     os.chmod(temp_file.name, 0o600)
 
                     with repo.git.custom_environment(
-                            GIT_SSH_COMMAND=f"ssh -i {temp_file.name}"
+                        GIT_SSH_COMMAND=f"ssh -i {temp_file.name}"
                     ):
                         repo.remote().pull()
             else:
@@ -355,7 +361,6 @@ if __name__ == "__main__":
             )
 
         return flask.Response(json.dumps({}), mimetype="application/json")
-
 
     @app.delete("/api/configuration/<id>")
     @user_required
@@ -373,7 +378,6 @@ if __name__ == "__main__":
         )
 
         return flask.Response(json.dumps({}), mimetype="application/json")
-
 
     @app.post("/api/configuration")
     @user_required
@@ -423,6 +427,7 @@ if __name__ == "__main__":
             )
 
         if "Dockerfile" not in os.listdir(repo_fullpath):
+            os.rmdir(repo_fullpath)
             LOG.error("Cloning was successful, but Dockerfile was not found.")
             return flask.Response(
                 json.dumps(
@@ -434,6 +439,14 @@ if __name__ == "__main__":
                 mimetype="application/json",
             )
 
+        if not are_mappings_valid(repo_fullpath, volume_mappings):
+            os.rmdir(repo_fullpath)
+            return flask.Response(
+                json.dumps({"error": "Some of the mappings are invalid."}),
+                status=500,
+                mimetype="application/json",
+            )
+
         user.repository_configurations.append(configuration)
 
         dbase.get_mongo_collection("users").replace_one(
@@ -441,7 +454,6 @@ if __name__ == "__main__":
         )
 
         return flask.Response(json.dumps({}), mimetype="application/json")
-
 
     @app.post("/api/login")
     def login():
@@ -475,7 +487,6 @@ if __name__ == "__main__":
         }
 
         return flask.redirect("/")
-
 
     @app.post("/api/register")
     def register():
@@ -520,12 +531,10 @@ if __name__ == "__main__":
 
         return flask.redirect("/")
 
-
     @app.post("/api/logout")
     def logout():
         flask.session["user"] = None
 
         return flask.redirect("/")
-
 
     socketio.run(app, host="0.0.0.0", port=int(os.environ["APP_PORT"]))

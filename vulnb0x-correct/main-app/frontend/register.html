@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register to vulnb0x</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css"
+          integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w=="
+          crossorigin="anonymous" referrerpolicy="no-referrer"/>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+
+    <style>
+        .gradient-custom-2 {
+            /* fallback for old browsers */
+            background: #fccb90;
+
+            /* Chrome 10-25, Safari 5.1-6 */
+            background: -webkit-linear-gradient(to right, #3E78B2, #004BA8, #3E78B2);
+
+            /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+            background: linear-gradient(to right, #3E78B2, #004BA8, #3E78B2);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .error {
+            color: red;
+        }
+
+        @media (min-width: 768px) {
+            .gradient-form {
+                height: 100vh !important;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .gradient-custom-2 {
+                border-top-right-radius: .3rem;
+                border-bottom-right-radius: .3rem;
+            }
+        }
+
+        body {
+            height: 100vh;
+        }
+    </style>
+</head>
+
+<body>
+<section class="h-100 gradient-form" style="background-color: #eee;">
+    <div class="container py-5 h-100">
+        <div class="row d-flex justify-content-center align-items-center h-100">
+            <div class="col-xl-10">
+                <div class="card rounded-3 text-black">
+                    <div class="row g-0">
+                        <div class="col-lg-6">
+                            <div class="card-body p-md-5 mx-md-4">
+
+                                <div class="text-center">
+                                    <h4 class="mt-1 mb-5 pb-1">Welcome to vulnb0x.</h4>
+                                </div>
+
+                                <form data-vbox-register-form method="POST">
+                                    <p>Please register an account</p>
+
+                                    <div class="form-outline mb-4">
+                                        <input type="email" data-vbox-email-input name="email" required id="email"
+                                               class="form-control" placeholder="john@example.com"/>
+                                    </div>
+
+                                    <div class="form-outline mb-4">
+                                        <input placeholder="Password" type="password" data-vbox-password-input
+                                               required name="password" id="password" class="form-control"/>
+                                    </div>
+
+                                    <div class="form-outline mb-4">
+                                        <input placeholder="Repeat password" type="password"
+                                               data-vbox-password-repeat-input required class="form-control"/>
+                                        <small data-vbox-repeat-invalid class="text-danger hidden">
+                                            Must match with the password field.
+                                        </small>
+                                    </div>
+
+                                    <div class="text-center pt-1 mb-5 pb-1">
+                                        <button data-vbox-register-button
+                                                class="btn btn-primary btn-block fa-lg mb-3"
+                                                type="submit">Register
+                                        </button>
+                                        <p data-vbox-invalid-register class="hidden error">The provided email is
+                                            already in use!</p>
+                                    </div>
+
+                                    <div class="d-flex align-items-center justify-content-center pb-4">
+                                        <div>Already have an account? <a href="/login">Log in!</a></div>
+                                    </div>
+
+                                </form>
+
+                            </div>
+                        </div>
+                        <div class="col-lg-6 d-flex align-items-center gradient-custom-2">
+                            <div class="text-white px-3 py-4 p-md-5 mx-md-4">
+                                <h4 class="mb-4">We are more than just a company</h4>
+                                <p class="small mb-0">Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed
+                                    do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
+                                    veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
+                                    consequat.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"
+        crossorigin="anonymous"></script>
+<script src="register.js"></script>
+</body>
+
+</html>

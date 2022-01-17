@@ -1,0 +1,14 @@
+flask
+Flask-Session
+python-dotenv
+flask_socketio
+gevent
+gevent-websocket
+dataclasses-json
+pymongo
+redis
+bcrypt
+dacite
+GitPython
+docker
+black

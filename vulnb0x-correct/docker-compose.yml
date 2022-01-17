@@ -1,0 +1,67 @@
+version: '3'
+services:
+  docker:
+    networks:
+      - net2
+    hostname: vulnb0x-docker
+    domainname: vulnb0x-docker
+    image: docker:dind
+    container_name: vulnb0x-docker
+    volumes:
+      - certs:/certs/client
+      - repositories:/var/repositories
+  mongodb:
+    image: mongo:latest
+    restart: always
+    container_name: vulnb0x-mongodb
+    hostname: vulnb0x-mongodb
+    domainname: vulnb0x-mongodb
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=user
+      - MONGO_INITDB_ROOT_PASSWORD=strongpassword11
+    networks:
+      - net1
+  redis:
+    image: redis:latest
+    restart: always
+    hostname: vulnb0x-redis
+    domainname: vulnb0x-redis
+    environment:
+      - REDIS_PASSWORD=strongpassword11
+    command: >
+      --requirepass ${REDIS_PASSWORD}
+    networks:
+      - net1
+
+  vulnb0x:
+    build: ./main-app
+    depends_on:
+      - mongodb
+      - docker
+    container_name: vulnb0x-app
+    environment:
+      - APP_PORT=8090
+      - REPOS_PATH=/var/repositories
+      - MONGO_URL=mongodb://user:strongpassword11@vulnb0x-mongodb:27017/
+      - MONGO_DB=prod
+      - REDIS_URL=redis://:strongpassword11@vulnb0x-redis:6379/0
+      - DOCKER_HOST=tcp://vulnb0x-docker:2376
+      - DOCKER_CERT_PATH=/certs/client
+      - DOCKER_TLS_VERIFY=1
+    volumes:
+      - certs:/certs/client
+      - repositories:/var/repositories
+      - ./privkey/id_rsa:/var/data/privkey
+    ports:
+      - "8090:8090"
+    networks:
+      - net1
+      - net2
+volumes:
+  certs: null
+  repositories: null
+networks:
+  net1:
+    driver: bridge
+  net2:
+    driver: bridge
