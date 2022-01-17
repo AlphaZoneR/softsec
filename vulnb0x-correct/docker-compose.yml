@@ -4,6 +4,7 @@ services:
     networks:
       - net2
     hostname: vulnb0x-docker
+    privileged: true
     domainname: vulnb0x-docker
     image: docker:dind
     container_name: vulnb0x-docker
@@ -26,10 +27,10 @@ services:
     restart: always
     hostname: vulnb0x-redis
     domainname: vulnb0x-redis
+    container_name: vulnb0x-redis
     environment:
       - REDIS_PASSWORD=strongpassword11
-    command: >
-      --requirepass ${REDIS_PASSWORD}
+    command: redis-server --requirepass strongpassword11
     networks:
       - net1
 
@@ -38,6 +39,7 @@ services:
     depends_on:
       - mongodb
       - docker
+      - redis
     container_name: vulnb0x-app
     environment:
       - APP_PORT=8090

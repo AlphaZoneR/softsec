@@ -40,7 +40,7 @@ class RepositoryConfiguration:
 class User:
     email: str
     password: bytes
-    permissions: str = dataclasses.field(default_factory="user")
+    permissions: str = dataclasses.field(default_factory=lambda: "user")
     repository_configurations: List["RepositoryConfiguration"] = dataclasses.field(
         default_factory=lambda: []
     )

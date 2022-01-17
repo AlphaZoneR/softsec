@@ -12,9 +12,10 @@ RUN mkdir ~/.ssh/ && \
 RUN ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts && \
     ssh-keyscan -t rsa gitlab.com >> ~/.ssh/known_hosts
 
-ADD ./ ./
-
-RUN mv prod.env .env
+ADD ./requirements.txt ./requirements.txt
 RUN python3 -m pip install -r ./requirements.txt --ignore-installed
+
+ADD ./ ./
+RUN mv prod.env .env
 
 CMD ["python", "main.py"]

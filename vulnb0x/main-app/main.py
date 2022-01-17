@@ -9,6 +9,7 @@ import threading
 from datetime import datetime
 from itertools import tee
 import time
+import shutil
 from typing import Container, List, Optional
 
 import bcrypt
@@ -161,6 +162,7 @@ def user_required(f):
 def are_mappings_valid(repo_fullpath: str, volume_mappings: List[data.VolumeMapping]):
     for mapping in volume_mappings:
         mapping_fullpath = pathlib.Path(os.path.join(repo_fullpath, mapping.source))
+        LOG.debug(f"fullpath={mapping_fullpath}, exists={mapping_fullpath.exists()}")
         if not mapping_fullpath.exists():
             return False
 
@@ -427,8 +429,8 @@ if __name__ == "__main__":
             )
 
         if "Dockerfile" not in os.listdir(repo_fullpath):
-            os.rmdir(repo_fullpath)
             LOG.error("Cloning was successful, but Dockerfile was not found.")
+            shutil.rmtree(repo_fullpath)
             return flask.Response(
                 json.dumps(
                     {
@@ -440,9 +442,10 @@ if __name__ == "__main__":
             )
 
         if not are_mappings_valid(repo_fullpath, volume_mappings):
+            LOG.error("Cloning was successful, but invalid volume mappings were given.")
             os.rmdir(repo_fullpath)
             return flask.Response(
-                json.dumps({"error": "Some of the mappings are invalid."}),
+                json.dumps({"error": "Some of the volume mappings are invalid."}),
                 status=500,
                 mimetype="application/json",
             )

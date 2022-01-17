@@ -2,6 +2,7 @@ import dataclasses
 import functools
 import logging
 import os
+import shutil
 import sys
 import tempfile
 import threading
@@ -165,8 +166,9 @@ def is_valid_user(user: dict) -> bool:
 
 def are_mappings_valid(repo_fullpath: str, volume_mappings: List[data.VolumeMapping]):
     for mapping in volume_mappings:
-        mapping_fullpath = pathlib.Path(os.path.join(repo_fullpath, mapping.source))
+        mapping_fullpath = pathlib.Path(os.path.abspath(os.path.join(repo_fullpath, mapping.source)))
         root = pathlib.Path(repo_fullpath)
+        LOG.debug(f"fullpath={mapping_fullpath}, parent={root in mapping_fullpath.parents}, parents={mapping_fullpath.parents}")
 
         if not root in mapping_fullpath.parents:
             return False
@@ -430,7 +432,7 @@ if __name__ == "__main__":
 
         if "Dockerfile" not in os.listdir(repo_fullpath):
             LOG.error("Cloning was successful, but Dockerfile was not found.")
-            os.rmdir(repo_fullpath)
+            shutil.rmtree(repo_fullpath)
             return flask.Response(
                 json.dumps(
                     {
@@ -442,7 +444,7 @@ if __name__ == "__main__":
             )
 
         if not are_mappings_valid(repo_fullpath, volume_mappings):
-            os.rmdir(repo_fullpath)
+            shutil.rmtree(repo_fullpath)
             return flask.Response(
                 json.dumps({"error": "Some of the mappings are invalid."}),
                 status=500,
