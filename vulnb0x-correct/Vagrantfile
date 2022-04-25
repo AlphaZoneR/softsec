@@ -1,5 +1,5 @@
 Vagrant.configure("2") do |config|
-    config.vm.define "vulnb0x" do |box|
+    config.vm.define "vulnb0x-correct" do |box|
         
         box.vm.provider "vmware_esxi" do |p|
             p.guest_memsize=4096
@@ -10,7 +10,7 @@ Vagrant.configure("2") do |config|
     
         end
 
-        box.vm.hostname = "vulnb0x"
+        box.vm.hostname = "vulnb0x-correct"
         box.vm.box = "generic/debian10"
 
         box.vm.synced_folder "./", "/app/vulnb0x", type: "rsync", rsync__exclude: ['./media', '.vscode', '.idea', 'readme.md', 'readme.pdf', '.gitignore', '**/.venv']
